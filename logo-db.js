@@ -25,4 +25,3 @@ Object.assign(LOGO_DB, {
 
 
 
-});
