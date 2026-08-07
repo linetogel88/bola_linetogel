@@ -18,7 +18,8 @@
 
 if (typeof LOGO_DB === 'undefined') var LOGO_DB = {};
 Object.assign(LOGO_DB, {
-
+ "Karlbergs BK": "https://i.postimg.cc/sfJJg5YD/Karlbergs-BK.png",
+});
     // ── TAMBAHKAN LOGO MANUAL DI BAWAH SINI ──────────────────────
     // "nama tim lowercase": "https://url-logo.png",
 
