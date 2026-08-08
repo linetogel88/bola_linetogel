@@ -2037,7 +2037,7 @@ Object.assign(LOGO_DB, {
   "bobruichanka bobruisk women": "https://r2.thesportsdb.com/images/media/team/badge/hpinck1694171372.png",
   "boc poljcane": "https://r2.thesportsdb.com/images/media/team/badge/yj4cqa1741148983.png",
   "boca gibraltar": "https://r2.thesportsdb.com/images/media/team/badge/tn17311616160823.png",
-  "boca juniors": "https://www.thesportsdb.com/images/media/team/badge/bm7krb1775741582.png",
+  "boca juniors": "https://i.postimg.cc/nLXbXMDQ/Boca-Juniors.png",
   "boca juniors de cali": "https://r2.thesportsdb.com/images/media/team/badge/kws2x41615832171.png",
   "boca juniors de melo": "https://r2.thesportsdb.com/images/media/team/badge/ftrd721734404183.png",
   "boca juniors femenino": "https://r2.thesportsdb.com/images/media/team/badge/bzf62q1769678226.png",
