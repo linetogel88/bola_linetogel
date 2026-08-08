@@ -1444,7 +1444,7 @@ Object.assign(LOGO_DB, {
   "atletico tembetary": "https://r2.thesportsdb.com/images/media/team/badge/xinof51730664653.png",
   "atletico tetuan": "https://www.thesportsdb.com/images/media/team/badge/r6k2091773232292.png",
   "atletico tordesillas": "https://r2.thesportsdb.com/images/media/team/badge/1bq3yt1735014628.png",
-  "atletico tucuman": "https://i.postimg.cc/KvGWKRXj/Atletico-Tucuman.png",
+  "atletico tucuman": "https://static.flashscore.com/res/image/data/0hFCl2f5-QitRwNMT.png",
   "atletico uri": "https://r2.thesportsdb.com/images/media/team/badge/2nwd7r1724130983.png",
   "atletico vega real": "https://r2.thesportsdb.com/images/media/team/badge/4jq72f1738078835.png",
   "atletico venezuela c.f.": "https://r2.thesportsdb.com/images/media/team/badge/4huei01639000541.png",
