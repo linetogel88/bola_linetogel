@@ -491,7 +491,10 @@ function buatPasaran(m){
   var s1  = parseInt(m.score1)||0, s2 = parseInt(m.score2)||0;
   var ada = (m.score1!=='-' && m.score2!=='-');
   var beda= Math.abs(s1-s2);
-  var seed= _hdpSeed((m.team1||'')+'|'+(m.team2||'')+'|'+(m.date||'')+'|'+(m.time||''));
+  // Zona waktu dibuang dari seed supaya angka pasaran di widget dan di
+  // generator statis selalu sama persis untuk pertandingan yang sama.
+  var jamSeed = String(m.time||'').replace(/\s*(WIB|WITA|WIT)\s*/ig,'').trim();
+  var seed= _hdpSeed((m.team1||'')+'|'+(m.team2||'')+'|'+(m.date||'')+'|'+jamSeed);
 
   /* rentang step pasaran menyesuaikan selisih skor prediksi
      → makin timpang skornya, makin besar voor-nya */
@@ -821,7 +824,7 @@ function buildOutputHTML(leagues){
 +'@media (max-width:480px){.bm-shine{animation-duration:5s;}.bm-card{box-shadow:0 10px 20px -8px rgba(0,0,0,.7),0 0 16px var(--gd),inset 0 2px 1px rgba(255,255,255,.15);}}\n'
 +'@media (prefers-reduced-motion:reduce){.bm-shine,.bm-fire,.bm-badge{animation:none!important;}}\n'
 +'.bm-card{position:relative;flex:0 0 auto;width:300px;border:3px solid var(--g);border-radius:15px;padding:14px 14px 12px;'
-+  'background:linear-gradient(155deg,#4a4a4a 0%,#343434 45%,#242424 100%);'
++  'background:linear-gradient(180deg,rgba(20,20,20,.42),rgba(10,10,10,.62)),url(https://cdn.areabermain.club/assets/cdn/az5/2026/08/10/20260810/a9f1f7ce6f0aad4e3eda5bd9c0b9610e/a1da402c-b9ab-4238-8e0f-50d160a2291b.png) center/cover no-repeat,#242424;'
 +  'transform:translateY(0);'
 +  'box-shadow:0 18px 30px -10px rgba(0,0,0,.75),0 6px 12px rgba(0,0,0,.5),0 0 22px var(--gd),inset 0 2px 1px rgba(255,255,255,.18),inset 0 -10px 22px rgba(0,0,0,.55);'
 +  'transition:transform .3s ease,box-shadow .3s ease;overflow:hidden;will-change:transform;transform:translateZ(0);backface-visibility:hidden;}\n'
