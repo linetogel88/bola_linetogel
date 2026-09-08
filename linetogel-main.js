@@ -1,5 +1,5 @@
 /* BUILD_VERSION: date-fix-2026-08-24 — header tanggal patok ke HARI INI (WIB) */
-console.log("[bolaauto] date-fix-2026-08-24 aktif");
+console.log("[bolaauto] neon-stadium-scoreboard aktif");
 (function(){
 
 
@@ -11,8 +11,8 @@ var SITE_NAME     = 'LINE TOGEL';
 var SITE_LOGO     = 'https://cdn.areabermain.club/assets/cdn/az6/2026/07/25/20260725/f3fa85abe469ac91f803335bf025c6d1/logo-line.png';
 var MBAPPE_GIF    = 'https://photoku.io/images/2026/05/31/giffmbappee-finall.gif';
 var MARQUEE_TEXT  = '👑 PREDIKSI BOLA TERUPDATE ! Tunggu apa lagi? Daftar di LINE TOGEL dan nikmati pengalaman taruhan terbaik! 👑';
-var COLOR_MAIN    = '#CE4FFF';
-var COLOR_TEXT    = '#f3e2ff';
+var COLOR_MAIN    = '#18D8FF';
+var COLOR_TEXT    = '#F4FBFF';
 var BG_IMAGE      = '';
 var BG_OVERLAY    = '#000000';
 var AUTO_REFRESH  = 5 * 60 * 1000; // 5 menit
@@ -125,6 +125,31 @@ function _bmTanggal(ddmm){
   return ddmm + '/' + _bmTahunWIB(ddmm);
 }
 
+/* LIVE BERDASARKAN JAM KICK-OFF (WIB)
+   Status LIVE aktif dari jam mulai sampai 130 menit setelah kick-off.
+   Dipakai untuk badge LIVE agar tidak muncul sembarang. */
+function _ltMatchTimestampWIB(m){
+  try{
+    if(!m || !m.date || !m.time || m.date==='-' || m.time==='-') return 0;
+    var dp=String(m.date).replace(/-/g,'/').split('/');
+    var tp=String(m.time).replace('.',':').split(':');
+    if(dp.length<2 || tp.length<2) return 0;
+    var d=parseInt(dp[0],10), mo=parseInt(dp[1],10)-1;
+    var y=dp.length>=3 && parseInt(dp[2],10) ? parseInt(dp[2],10) : _bmTahunWIB(m.date);
+    if(y<100) y+=2000;
+    var h=parseInt(tp[0],10), mi=parseInt(tp[1],10);
+    if([d,mo,y,h,mi].some(function(v){return isNaN(v);} )) return 0;
+    /* Jam sumber = WIB (UTC+7), konversi ke timestamp UTC */
+    return Date.UTC(y,mo,d,h-7,mi,0,0);
+  }catch(e){ return 0; }
+}
+function isMatchLiveBySchedule(m){
+  var start=_ltMatchTimestampWIB(m);
+  if(!start) return false;
+  var now=Date.now();
+  return now>=start && now<(start + 130*60*1000);
+}
+
 /* Ambil pertandingan teratas dari hasil parse → [{liga, m}] */
 function pickBigMatches(leagues){
   var out=[], sudah={}, i, j, lg, key;
@@ -176,11 +201,13 @@ function buildBigMatchHTML(leagues){
 
     /* BM_BIG kartu teratas = BIG MATCH (pakai api), sisanya MATCH DAY */
     var isBig= (idx < BM_BIG);
+    var isLive = isMatchLiveBySchedule(m);
     var lbl  = isBig ? 'BIG MATCH' : 'MATCH DAY';
     var fire = isBig ? '<span class="bm-fire">&#128293;</span>' : '';
+    var liveBadge = isLive ? '<span class="bm-live-now">&#9679; LIVE</span>' : '';
 
-    cards+='<article class="bm-card"><span class="bm-shine"></span>'
-      +  '<div class="bm-badgewrap"><span class="bm-badge">'+fire+lbl+'</span></div>'
+    cards+='<article class="bm-card'+(isLive?' lt-live':'')+'" data-match-date="'+m.date+'" data-match-time="'+m.time+'"><span class="bm-shine"></span>'
+      +  '<div class="bm-badgewrap"><span class="bm-badge">'+fire+lbl+'</span>'+liveBadge+'</div>'
       +  '<div class="bm-league">'+(it.liga||'')+'</div>'
       +  '<div class="bm-teams">'
       +    '<div class="bm-team"><span class="bm-logo"><img src="'+lh+'" alt="'+m.team1+'" loading="lazy"/></span><b>'+m.team1+'</b></div>'
@@ -791,7 +818,8 @@ function buildOutputHTML(leagues){
       var ouAccent=p.ouClass==='green'?'accent-green':'accent-red';
       var ox2Accent=p.ox2Class==='green'?'accent-green':'accent-gold';
       var teamKey=(m.team1+' '+m.team2).toLowerCase();
-      blocks+='<div class="match-card '+cls+'" data-teams="'+teamKey+'" onclick="ibcToggleCard(this)">\n';
+      var liveCls=isMatchLiveBySchedule(m)?' lt-live':'';
+      blocks+='<div class="match-card '+cls+liveCls+'" data-teams="'+teamKey+'" data-match-date="'+m.date+'" data-match-time="'+m.time+'" onclick="ibcToggleCard(this)">\n';
       blocks+='<div class="match-row">\n';
       blocks+='  <div class="team-side left">\n    <div class="box-image">\n      <img class="team-logo" src="'+l1+'" alt="'+m.team1+'"/>\n      <img class="character" src="'+l1+'" alt=""/>\n    </div>\n    <span class="team-name">'+m.team1+'</span>\n  </div>\n';
       blocks+='  <div class="score-center"><div class="score-num">'+m.score1+' : '+m.score2+'</div><div class="match-dt">'+m.date+'<br/>'+m.time+' WIB</div></div>\n';
@@ -950,13 +978,7 @@ function buildOutputHTML(leagues){
 +'</header>\n'
 +'\n'
 +'<div class="date-display">\n'
-+'  <span class="date-text">&#128197; '+autoDate+'</span>\n'
-+'</div>\n'
-+'\n'
-+'<div class="stats-bar">\n'
-+'  <div class="stat-item"><span class="stat-num">'+totalLeagues+'</span><span class="stat-lbl">Liga</span></div>\n'
-+'  <div class="stat-item"><span class="stat-num">'+totalMatches+'</span><span class="stat-lbl">Pertandingan</span></div>\n'
-+'  <div class="stat-item"><span class="stat-num">100%</span><span class="stat-lbl">Terupdate</span></div>\n'
++'  <span class="date-text">'+autoDate+'</span>\n'
 +'</div>\n'
 +'\n'
 +'<div class="marquee-wrap"><div class="marquee-inner">'+MARQUEE_TEXT+'&nbsp;&nbsp;&nbsp;&nbsp;'+MARQUEE_TEXT+'</div></div>\n'
@@ -1046,6 +1068,375 @@ function buildOutputHTML(leagues){
 }
 
 /* ═══════════════════════════════════════════════
+   ELITE SPORT ARENA DESIGN — CLEAN SPORT UI (NAVBAR & STATS REMOVED)
+   Tidak mengubah parser, sumber data, prediksi, filter inti, atau auto-refresh.
+═══════════════════════════════════════════════ */
+function applyEliteSportArena(){
+  if(!root) return;
+
+  var oldStyle=document.getElementById('lt-elite-sport-style');
+  if(oldStyle) oldStyle.remove();
+  var oldTop=document.getElementById('lt-sport-topbar');
+  if(oldTop) oldTop.remove();
+  var oldHeroCopy=document.getElementById('lt-hero-copy');
+  if(oldHeroCopy) oldHeroCopy.remove();
+  var oldLeagueNav=document.getElementById('lt-league-chips');
+  if(oldLeagueNav) oldLeagueNav.remove();
+  var oldBottom=document.getElementById('lt-sport-bottom');
+  if(oldBottom) oldBottom.remove();
+
+  var css=document.createElement('style');
+  css.id='lt-elite-sport-style';
+  css.textContent=`
+  #linetogel-root{
+    --lt-cyan:#18d8ff;--lt-blue:#1688ff;--lt-deep:#04101f;--lt-panel:#07192d;
+    --lt-line:rgba(63,211,255,.24);--lt-green:#6cff8d;--lt-pink:#ff2fa0;
+    --lt-yellow:#ffd34e;--lt-white:#f6fbff;--lt-muted:#86a3ba;
+    position:relative;isolation:isolate;color:var(--lt-white);width:100%;overflow:hidden;
+  }
+  #linetogel-root::before{content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;background:
+    radial-gradient(circle at 50% -8%,rgba(0,173,255,.28),transparent 34%),
+    radial-gradient(circle at 6% 60%,rgba(0,130,255,.16),transparent 30%),
+    radial-gradient(circle at 94% 56%,rgba(0,130,255,.15),transparent 30%),
+    linear-gradient(180deg,#020a14,#061526 48%,#020812 100%);}
+  #linetogel-root::after{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.35;background-image:
+    linear-gradient(rgba(65,203,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(65,203,255,.028) 1px,transparent 1px),
+    repeating-linear-gradient(115deg,transparent 0 115px,rgba(25,216,255,.018) 116px 117px);background-size:48px 48px,48px 48px,auto;}
+
+  #linetogel-root .lt-sport-topbar{width:min(96%,1460px);height:58px;margin:10px auto 0;display:flex;align-items:center;gap:22px;padding:0 18px;border:1px solid var(--lt-line);border-radius:16px;background:rgba(3,13,25,.93);box-shadow:0 14px 38px rgba(0,0,0,.42);backdrop-filter:blur(18px);position:relative;z-index:30;}
+  #linetogel-root .lt-brand-mini{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:900;font-style:italic;white-space:nowrap;letter-spacing:.5px;}
+  #linetogel-root .lt-ball{width:35px;height:35px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#fff,#88dfff 42%,#0e3555 75%);box-shadow:0 0 22px rgba(24,216,255,.32);font-size:20px;}
+  #linetogel-root .lt-brand-mini b{color:var(--lt-cyan);}
+  #linetogel-root .lt-main-nav{display:flex;align-items:center;gap:2px;flex:1;height:100%;}
+  #linetogel-root .lt-main-nav button{height:100%;padding:0 14px;border:0;background:transparent;color:#b7c8d8;font:700 11px 'Poppins',sans-serif;cursor:pointer;position:relative;}
+  #linetogel-root .lt-main-nav button.active,#linetogel-root .lt-main-nav button:hover{color:var(--lt-cyan);}
+  #linetogel-root .lt-main-nav button.active::after{content:"";position:absolute;left:18%;right:18%;bottom:0;height:3px;border-radius:4px;background:var(--lt-cyan);box-shadow:0 0 14px var(--lt-cyan);}
+  #linetogel-root .lt-nav-search{min-width:235px;height:36px;border:1px solid rgba(66,204,255,.28);border-radius:999px;background:#061424;display:flex;align-items:center;gap:8px;padding:0 13px;color:#7795ad;font-size:10px;cursor:pointer;}
+  #linetogel-root .lt-login,#linetogel-root .lt-register{height:36px;border-radius:9px;padding:0 18px;font-size:10px;font-weight:900;letter-spacing:.3px;}
+  #linetogel-root .lt-login{border:1px solid rgba(62,202,255,.32);background:rgba(2,13,24,.8);color:#d9f6ff;}
+  #linetogel-root .lt-register{border:1px solid #31d9ff;background:linear-gradient(135deg,#18cfff,#21a6ff);color:#00131f;box-shadow:0 0 22px rgba(24,216,255,.22);}
+
+  #linetogel-root .site-logo{width:min(96%,1460px);height:250px;min-height:250px;margin:8px auto 0!important;border-radius:18px!important;border:1px solid rgba(61,205,255,.22)!important;padding:20px 32px!important;overflow:hidden!important;position:relative!important;background:
+    linear-gradient(90deg,rgba(2,11,22,.94) 0%,rgba(2,12,24,.38) 48%,rgba(2,11,22,.94) 100%),
+    radial-gradient(ellipse at 50% 110%,rgba(21,185,255,.31),transparent 46%),
+    linear-gradient(180deg,#09213b 0%,#03111f 72%,#071a19 100%)!important;box-shadow:0 22px 60px rgba(0,0,0,.48),inset 0 -1px 0 rgba(88,225,255,.18)!important;}
+  #linetogel-root .site-logo::before{content:"";position:absolute;left:-6%;right:-6%;bottom:-78px;height:150px;border-radius:50%;border:2px solid rgba(74,255,150,.18);background:repeating-linear-gradient(90deg,rgba(50,255,140,.06) 0 2px,transparent 2px 70px);box-shadow:0 -26px 80px rgba(22,147,88,.14);transform:perspective(270px) rotateX(62deg);}
+  #linetogel-root .site-logo::after{content:"🏆";position:absolute;right:6.5%;top:50%;transform:translateY(-50%);font-size:106px;filter:drop-shadow(0 0 18px rgba(58,213,255,.4)) drop-shadow(0 18px 28px rgba(0,0,0,.55));opacity:.9;z-index:2;}
+  #linetogel-root .site-logo img.logo-main{position:absolute;left:5%;top:58px;width:390px!important;max-width:36%!important;margin:0!important;filter:drop-shadow(0 0 19px rgba(31,204,255,.34))!important;z-index:4!important;}
+  #linetogel-root .mbappe-gif{position:absolute!important;left:50%!important;bottom:-10px!important;transform:translateX(-50%)!important;width:220px!important;max-width:220px!important;min-width:180px!important;filter:drop-shadow(0 0 24px rgba(32,187,255,.35)) drop-shadow(0 20px 30px rgba(0,0,0,.58))!important;z-index:3!important;}
+  #linetogel-root .mbappe-gif.flip{display:none!important;}
+  #linetogel-root .lt-hero-copy{position:absolute;left:5.4%;top:126px;z-index:5;width:360px;pointer-events:none;}
+  #linetogel-root .lt-hero-kicker{font:800 9px 'Poppins',sans-serif;letter-spacing:5px;color:#9cb9cc;text-transform:uppercase;}
+  #linetogel-root .lt-hero-title{margin-top:7px;font:900 clamp(17px,2vw,28px) 'Poppins',sans-serif;font-style:italic;letter-spacing:1px;color:white;text-shadow:0 0 18px rgba(24,216,255,.18);}
+  #linetogel-root .lt-hero-title b{color:var(--lt-cyan);}
+  #linetogel-root .lt-hero-tag{margin-top:9px;font-size:10px;font-weight:700;letter-spacing:2.3px;color:#98b5c8;}.lt-hero-tag strong{color:#5fe2ff;}
+  #linetogel-root .lt-hero-right{position:absolute;right:18%;top:70px;z-index:4;width:180px;border-left:3px solid #70ff74;padding-left:15px;font-size:12px;line-height:1.7;font-weight:900;letter-spacing:2px;color:#eefaff;text-transform:uppercase;text-shadow:0 1px 4px #000;}
+  #linetogel-root .lt-hero-right em{display:block;color:#25dbff;font-size:16px;font-style:italic;margin-bottom:7px;letter-spacing:1px;}
+
+  #linetogel-root .date-display{width:min(96%,1460px)!important;margin:0 auto 10px!important;border-radius:0 0 12px 12px!important;border:1px solid rgba(63,211,255,.21)!important;padding:9px 18px!important;background:linear-gradient(90deg,#061425,#07192c,#061425)!important;box-shadow:none!important;display:flex!important;align-items:center!important;gap:10px!important;}
+  #linetogel-root .date-display::before,#linetogel-root .date-display::after{display:none!important;}
+  #linetogel-root .lt-live-strip{padding:5px 9px;border-radius:7px;border:1px solid rgba(63,211,255,.24);background:rgba(24,216,255,.08);color:#5edfff;font-size:9px;font-weight:900;letter-spacing:1px;white-space:nowrap;}
+  #linetogel-root .lt-live-strip.is-live{background:rgba(74,255,121,.11);border-color:rgba(74,255,121,.34);color:#65ff87;box-shadow:0 0 13px rgba(74,255,121,.11);}
+  #linetogel-root .date-text{font-family:'Poppins',sans-serif!important;font-size:11px!important;letter-spacing:.7px!important;color:#eafbff!important;text-shadow:none!important;flex:1!important;}
+
+  #linetogel-root .stats-bar{width:min(96%,1460px)!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin-bottom:12px!important;}
+  #linetogel-root .stat-item{height:75px!important;border:1px solid rgba(64,204,255,.28)!important;border-radius:13px!important;background:linear-gradient(135deg,rgba(8,31,54,.94),rgba(4,17,31,.97))!important;box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05)!important;padding:12px 15px!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;text-align:left!important;position:relative!important;overflow:hidden!important;}
+  #linetogel-root .stat-item::before{content:"⚽";position:absolute;right:10px;top:14px;font-size:33px;opacity:.16;filter:drop-shadow(0 0 8px #1bd8ff);}
+  #linetogel-root .stat-item:nth-child(2)::before{content:"🏆";}#linetogel-root .stat-item:nth-child(3)::before{content:"⟳";color:#68ff75;}#linetogel-root .stat-item:nth-child(4)::before{content:"▥";color:#28c7ff;}
+  #linetogel-root .stat-num{font-family:'Poppins',sans-serif!important;font-size:24px!important;color:white!important;line-height:1!important;text-shadow:none!important;}
+  #linetogel-root .stat-lbl{font-size:9px!important;color:#8bb2ca!important;opacity:1!important;letter-spacing:.7px!important;margin-top:5px!important;}
+  #linetogel-root .stat-live{position:absolute;right:10px;bottom:9px;background:#35d739;color:#06270a;border-radius:6px;padding:3px 8px;font-size:8px;font-weight:900;box-shadow:0 0 14px rgba(70,255,75,.22);}
+
+  #linetogel-root .marquee-wrap{width:min(96%,1460px)!important;margin:0 auto 12px!important;padding:9px 0!important;border:1px solid rgba(64,205,255,.23)!important;border-radius:10px!important;background:#061526!important;box-shadow:none!important;}
+  #linetogel-root .marquee-wrap::before{content:"🔊 INFO TERBARU:";position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;padding:0 14px;background:#071b2f;color:#80ff55;font-size:9px;font-weight:900;z-index:2;border-right:1px solid rgba(75,214,255,.18);}
+  #linetogel-root .marquee-inner{color:#b9d6e8!important;font-size:10px!important;text-shadow:none!important;letter-spacing:.4px!important;padding-left:25%!important;}
+
+  #linetogel-root .bm-section{width:min(96%,1460px)!important;margin:0 auto 14px!important;}
+  #linetogel-root .bm-head{text-align:left!important;margin:0 0 8px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;}
+  #linetogel-root .bm-kicker{border:0!important;background:transparent!important;padding:0!important;border-radius:0!important;font:900 20px 'Poppins',sans-serif!important;font-style:italic!important;color:#fff!important;text-shadow:none!important;letter-spacing:.5px!important;}
+  #linetogel-root .bm-kicker::before{content:"🔥 ";}#linetogel-root .bm-kicker::after{content:"  Pertandingan Pilihan";font-size:9px;color:#86a6bb;font-style:normal;font-weight:600;margin-left:8px;}
+  #linetogel-root .bm-runner{padding:3px 0 12px!important;}
+  #linetogel-root .bm-track{gap:14px!important;}
+  #linetogel-root .bm-card{width:360px!important;min-height:155px!important;border:1px solid rgba(43,205,255,.7)!important;border-radius:11px!important;padding:12px!important;background:
+    linear-gradient(120deg,rgba(5,36,65,.85),rgba(6,15,30,.78)),radial-gradient(circle at 12% 90%,rgba(23,151,255,.38),transparent 35%),#07172a!important;box-shadow:0 14px 28px rgba(0,0,0,.35),0 0 20px rgba(24,216,255,.08)!important;}
+  #linetogel-root .bm-card:nth-child(2n){border-color:rgba(168,77,255,.72)!important;background:linear-gradient(120deg,rgba(48,15,83,.84),rgba(13,14,31,.83)),radial-gradient(circle at 90% 25%,rgba(178,48,255,.32),transparent 34%),#141029!important;}
+  #linetogel-root .bm-card:nth-child(3n){border-color:rgba(255,55,105,.74)!important;background:linear-gradient(120deg,rgba(70,11,31,.86),rgba(11,18,36,.84)),radial-gradient(circle at 18% 88%,rgba(42,104,255,.28),transparent 34%),#170d1d!important;}
+  #linetogel-root .bm-badgewrap{justify-content:flex-start!important;margin-bottom:4px!important;}.bm-badgewrap::before,.bm-badgewrap::after{display:none!important;}
+  #linetogel-root .bm-badge{background:#fa188c!important;color:#fff!important;border-radius:6px!important;padding:4px 9px!important;font-family:'Poppins',sans-serif!important;font-size:8px!important;letter-spacing:.5px!important;box-shadow:0 0 16px rgba(255,24,140,.22)!important;}
+  #linetogel-root .bm-league{text-align:left!important;color:#a9cce0!important;font-family:'Poppins',sans-serif!important;font-size:9px!important;text-shadow:none!important;margin-bottom:7px!important;}
+  #linetogel-root .bm-logo{width:50px!important;height:50px!important;border:1px solid rgba(92,222,255,.28)!important;background:rgba(2,14,27,.6)!important;box-shadow:inset 0 0 20px rgba(26,194,255,.08)!important;}
+  #linetogel-root .bm-team b{font-family:'Poppins',sans-serif!important;font-size:11px!important;}.bm-teams em{font-size:18px!important;color:white!important;opacity:1!important;}
+  #linetogel-root .bm-meta{color:#c2d7e5!important;font-size:9px!important;margin-bottom:7px!important;}.bm-val i{font-size:7px!important;}.bm-val b{font-size:14px!important;color:#fff!important;text-shadow:none!important;}
+
+  #linetogel-root .lt-league-chips{width:min(96%,1460px);margin:0 auto 10px;display:flex;gap:5px;overflow:auto;scrollbar-width:none;padding:2px 0 3px;}.lt-league-chips::-webkit-scrollbar{display:none;}
+  #linetogel-root .lt-league-chip{flex:0 0 auto;height:36px;padding:0 13px;border:1px solid rgba(77,195,238,.24);background:#07192c;color:#a7c0d3;font:700 9px 'Poppins',sans-serif;border-radius:7px;cursor:pointer;transition:.2s;}
+  #linetogel-root .lt-league-chip:hover,#linetogel-root .lt-league-chip.active{background:linear-gradient(135deg,#24d6ff,#1aa5ff);border-color:#35dfff;color:#001523;box-shadow:0 0 18px rgba(35,216,255,.18);}
+  #linetogel-root .filter-wrap{width:min(96%,1460px)!important;margin:0 auto 10px!important;grid-template-columns:1fr 320px!important;gap:8px!important;padding:8px!important;border:1px solid rgba(67,202,255,.17);border-radius:9px;background:rgba(5,18,33,.8);}
+  #linetogel-root .filter-wrap>div:first-child{display:none!important;}#linetogel-root .filter-label{display:none!important;}
+  #linetogel-root .search-box{grid-column:2!important;}.fsearch{height:36px!important;border:1px solid rgba(75,205,255,.28)!important;border-radius:999px!important;background:#07182a!important;color:#e8f9ff!important;}
+  #linetogel-root .tap-hint{width:min(96%,1460px)!important;justify-content:flex-start!important;margin:0 auto 8px!important;border:0!important;border-radius:0!important;background:transparent!important;padding:4px 2px!important;}.hint-text{font-family:'Poppins',sans-serif!important;font-size:13px!important;color:#fff!important;opacity:1!important;font-weight:900!important;letter-spacing:.2px!important;}.hint-arrow{display:none!important;}.tap-hint::before{content:"◎";color:#ffd82d;font-size:22px;margin-right:6px;}
+
+  #linetogel-root .league-block{width:min(96%,1460px)!important;margin:0 auto 13px!important;border:0!important;border-radius:12px!important;padding:0!important;background:transparent!important;box-shadow:none!important;}
+  #linetogel-root .league-inner{border:1px solid rgba(73,204,255,.20)!important;border-radius:11px!important;background:rgba(4,17,31,.84)!important;overflow:hidden!important;}
+  #linetogel-root .league-crown{justify-content:flex-start!important;padding:10px 13px!important;background:linear-gradient(90deg,#071a2f,#061324)!important;border-bottom:1px solid rgba(76,203,255,.16)!important;}.league-crown::after{display:none!important;}
+  #linetogel-root .crown-name{font-family:'Poppins',sans-serif!important;font-size:13px!important;color:white!important;letter-spacing:.2px!important;text-align:left!important;}.match-count{right:12px!important;background:rgba(25,216,255,.10)!important;border:1px solid rgba(25,216,255,.23)!important;color:#58e5ff!important;font-family:'Poppins',sans-serif!important;font-size:8px!important;}
+  #linetogel-root .match-card{position:relative!important;margin:8px!important;border:1px solid rgba(71,193,236,.17)!important;border-radius:9px!important;overflow:hidden!important;background:linear-gradient(135deg,rgba(8,27,48,.97),rgba(5,17,30,.97))!important;box-shadow:0 9px 22px rgba(0,0,0,.22)!important;}
+  #linetogel-root .match-card::before{content:"PREVIEW";position:absolute;right:8px;top:7px;z-index:5;border:1px solid #1ebdff;color:#29ccff;border-radius:4px;padding:2px 6px;font-size:7px;font-weight:900;letter-spacing:.4px;background:#062039;}
+  #linetogel-root .match-card.lt-live::before{content:"● LIVE";border-color:#38ff63;color:#45ff69;background:#073119;box-shadow:0 0 12px rgba(65,255,100,.16);}
+  #linetogel-root .bm-live-now{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:999px;background:rgba(52,255,95,.13);border:1px solid rgba(61,255,98,.42);color:#59ff78;font-size:8px;font-weight:900;letter-spacing:.8px;box-shadow:0 0 14px rgba(65,255,100,.14);}
+  #linetogel-root .bm-card.lt-live{border-color:rgba(67,255,106,.58)!important;box-shadow:0 18px 34px rgba(0,0,0,.48),0 0 25px rgba(68,255,104,.14)!important;}
+  #linetogel-root .match-row{padding:19px 13px 10px!important;background:transparent!important;}.match-card.even .match-row,.match-card.odd .match-row{background:transparent!important;}.match-card.open .match-row{background:rgba(10,34,59,.78)!important;}.match-card:not(.open) .match-row:hover{background:rgba(13,43,73,.86)!important;}
+  #linetogel-root .team-side{gap:9px!important;}.box-image{width:46px!important;height:46px!important;display:grid!important;place-items:center!important;border-radius:50%!important;background:radial-gradient(circle,rgba(34,129,181,.18),rgba(3,13,23,.2))!important;border:1px solid rgba(71,206,255,.14)!important;}.box-image img.team-logo{width:35px!important;height:35px!important;}.match-row:hover .box-image img.team-logo{transform:scale(1.12)!important;filter:drop-shadow(0 0 10px rgba(25,216,255,.35))!important;}
+  #linetogel-root .team-name{font-family:'Poppins',sans-serif!important;font-size:11px!important;color:#f5fbff!important;}.score-center{width:108px!important;padding:5px 7px!important;border-radius:7px!important;background:rgba(18,48,76,.55)!important;border:1px solid rgba(70,197,238,.11)!important;}.score-num{font-family:'Poppins',sans-serif!important;font-size:20px!important;color:white!important;letter-spacing:3px!important;text-shadow:none!important;}.match-dt{font-family:'Poppins',sans-serif!important;font-size:8px!important;color:#9fbed2!important;opacity:1!important;}
+  #linetogel-root .pred-inner{background:#051322!important;padding:9px!important;}.pred-grid{gap:5px!important;}.pred-col{background:#071a2c!important;border:1px solid rgba(73,196,237,.13)!important;border-radius:6px!important;padding:8px 5px!important;}.col-title{font-family:'Poppins',sans-serif!important;font-size:8px!important;color:#9fb9ca!important;opacity:1!important;letter-spacing:.2px!important;}.col-answer{font-family:'Poppins',sans-serif!important;font-size:14px!important;color:#fff!important;}.col-note{font-family:'Poppins',sans-serif!important;font-size:8px!important;color:#7997ac!important;}
+  #linetogel-root .lt-analyze-btn{margin:8px 10px 10px;height:31px;border:1px solid #1b9fe2;border-radius:7px;background:linear-gradient(90deg,#0b3859,#07233b);color:white;font-size:8px;font-weight:900;letter-spacing:.8px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);}
+  #linetogel-root .lt-analyze-btn span{color:#32d4ff;font-size:13px;}
+
+  #linetogel-root .lt-sport-bottom{width:min(96%,1460px);margin:4px auto 20px;display:grid;grid-template-columns:1.2fr repeat(3,1fr);gap:7px;}.lt-bottom-card{height:58px;border:1px solid rgba(69,198,239,.21);border-radius:9px;background:linear-gradient(135deg,#071a2d,#061322);padding:10px 12px;display:flex;align-items:center;gap:10px;}.lt-bottom-icon{font-size:24px;color:#20d6ff}.lt-bottom-card b{display:block;font-size:10px;color:white;}.lt-bottom-card span{font-size:8px;color:#7d9db4;}
+
+  @keyframes ltGlow{0%,100%{box-shadow:0 0 0 rgba(24,216,255,0)}50%{box-shadow:0 0 18px rgba(24,216,255,.13)}}
+  #linetogel-root .bm-card:hover,#linetogel-root .match-card:hover{animation:ltGlow 1.8s ease-in-out infinite;}
+  @media(max-width:980px){#linetogel-root .lt-main-nav{display:none}.lt-nav-search{margin-left:auto!important}.lt-login,.lt-register{display:none}.site-logo::after{font-size:80px!important;right:4%!important}.lt-hero-right{right:17%!important;font-size:9px!important}.site-logo img.logo-main{max-width:42%!important}.lt-sport-bottom{grid-template-columns:1fr 1fr!important}.bm-card{width:315px!important}}
+  @media(max-width:680px){#linetogel-root .lt-sport-topbar{height:48px;padding:0 10px}.lt-brand-mini{font-size:13px!important}.lt-ball{width:30px!important;height:30px!important}.lt-nav-search{min-width:0!important;flex:1!important}.site-logo{height:205px!important;min-height:205px!important}.site-logo img.logo-main{left:5%!important;top:52px!important;max-width:58%!important;width:260px!important}.mbappe-gif{left:72%!important;width:150px!important;min-width:130px!important}.site-logo::after{display:none}.lt-hero-copy{top:111px!important;width:260px!important}.lt-hero-title{font-size:17px!important}.lt-hero-right{display:none}.stats-bar{grid-template-columns:repeat(2,1fr)!important}.filter-wrap{grid-template-columns:1fr!important}.search-box{grid-column:1!important}.bm-card{width:270px!important}.lt-sport-bottom{grid-template-columns:1fr!important}}
+  @media(max-width:430px){#linetogel-root .site-logo{height:180px!important;min-height:180px!important;padding:12px!important}.site-logo img.logo-main{top:42px!important;width:210px!important}.mbappe-gif{width:120px!important;min-width:105px!important;bottom:-5px!important}.lt-hero-copy{top:97px!important;width:220px!important}.lt-hero-kicker,.lt-hero-tag{display:none}.lt-hero-title{font-size:14px!important}.stats-bar{gap:6px!important}.stat-item{height:64px!important}.stat-num{font-size:19px!important}.bm-card{width:242px!important}.score-center{width:82px!important}.team-name{font-size:9px!important}.box-image{width:38px!important;height:38px!important}.box-image img.team-logo{width:29px!important;height:29px!important}.pred-grid{grid-template-columns:repeat(2,1fr)!important}}
+  @media(prefers-reduced-motion:reduce){#linetogel-root *,#linetogel-root *::before,#linetogel-root *::after{animation:none!important;transition:none!important}}
+  `;
+  root.appendChild(css);
+
+  /* Hero sengaja tanpa copy tambahan: hanya visual/logo/karakter. */
+
+  /* Navbar atas dan panel statistik sengaja dihilangkan sesuai desain terbaru. */
+  var stats=root.querySelector('.stats-bar');
+  if(stats) stats.remove();
+
+  var filter=root.querySelector('.filter-wrap');
+  var sel=document.getElementById('leagueFilter');
+  if(filter&&sel){
+    var chips=document.createElement('div');chips.id='lt-league-chips';chips.className='lt-league-chips';
+    Array.prototype.forEach.call(sel.options,function(opt,idx){
+      var b=document.createElement('button');b.className='lt-league-chip'+(idx===0?' active':'');b.type='button';b.textContent=(idx===0?'▦ ':'')+opt.textContent.replace(/^🏆\s*/,'');b.dataset.value=opt.value;
+      b.onclick=function(){sel.value=opt.value;if(typeof ibcFilterLeague==='function') ibcFilterLeague(opt.value);chips.querySelectorAll('.lt-league-chip').forEach(function(x){x.classList.remove('active')});b.classList.add('active');};chips.appendChild(b);
+    });
+    filter.parentNode.insertBefore(chips,filter);
+    sel.addEventListener('change',function(){chips.querySelectorAll('.lt-league-chip').forEach(function(x){x.classList.toggle('active',x.dataset.value===sel.value)});});
+  }
+
+  var dateBar=root.querySelector('.date-display');
+  var liveStrip=null;
+  if(dateBar){
+    liveStrip=document.createElement('span');
+    liveStrip.className='lt-live-strip';
+    dateBar.insertBefore(liveStrip,dateBar.firstChild);
+  }
+
+  function _ltCardIsLive(card){
+    var obj={date:card.getAttribute('data-match-date')||'',time:card.getAttribute('data-match-time')||''};
+    return isMatchLiveBySchedule(obj);
+  }
+  function updateLiveStates(){
+    var liveCount=0;
+    root.querySelectorAll('.match-card').forEach(function(card){
+      var live=_ltCardIsLive(card);
+      card.classList.toggle('lt-live',live);
+      if(live) liveCount++;
+    });
+    root.querySelectorAll('.bm-card[data-match-date]').forEach(function(card){
+      var live=_ltCardIsLive(card);
+      card.classList.toggle('lt-live',live);
+      var badge=card.querySelector('.bm-live-now');
+      if(live && !badge){
+        badge=document.createElement('span');badge.className='bm-live-now';badge.innerHTML='&#9679; LIVE';
+        var wrap=card.querySelector('.bm-badgewrap');if(wrap) wrap.appendChild(badge);
+      }else if(!live && badge){ badge.remove(); }
+    });
+    if(liveStrip){
+      liveStrip.classList.toggle('is-live',liveCount>0);
+      liveStrip.textContent=liveCount>0 ? ('● '+liveCount+' LIVE SEKARANG') : 'JADWAL PERTANDINGAN';
+    }
+  }
+
+  var cards=root.querySelectorAll('.match-card');
+  cards.forEach(function(card){
+    if(!card.querySelector('.lt-analyze-btn')){var btn=document.createElement('div');btn.className='lt-analyze-btn';btn.innerHTML='LIHAT ANALISA <span>›</span>';btn.onclick=function(e){e.stopPropagation();if(typeof ibcToggleCard==='function') ibcToggleCard(card);};card.appendChild(btn);}
+  });
+  updateLiveStates();
+  if(window.__LT_LIVE_TIMER__) clearInterval(window.__LT_LIVE_TIMER__);
+  window.__LT_LIVE_TIMER__=setInterval(updateLiveStates,30000);
+
+  var bottom=document.createElement('div');bottom.id='lt-sport-bottom';bottom.className='lt-sport-bottom';
+  bottom.innerHTML='<div class="lt-bottom-card"><div class="lt-bottom-icon">▥</div><div><b>STATISTIK & KLASMEN</b><span>Lihat performa tim dan data pertandingan</span></div></div>'+
+    '<div class="lt-bottom-card"><div class="lt-bottom-icon">⚡</div><div><b>FORM TERBARU</b><span>Tren dan performa terkini</span></div></div>'+
+    '<div class="lt-bottom-card"><div class="lt-bottom-icon">◎</div><div><b>DATA PERTANDINGAN</b><span>Ringkasan prediksi & skor</span></div></div>'+
+    '<div class="lt-bottom-card"><div class="lt-bottom-icon">◔</div><div><b>UPDATE OTOMATIS</b><span>Refresh data setiap 5 menit</span></div></div>';
+  root.appendChild(bottom);
+}
+
+
+
+/* ═══════════════════════════════════════════════
+   NEON STADIUM SCOREBOARD CARDS
+   Visual kartu pertandingan seperti papan skor stadion neon.
+   Hanya mengubah UI; mesin prediksi, parser, filter & auto-refresh tetap sama.
+═══════════════════════════════════════════════ */
+function applyNeonStadiumScoreboard(){
+  if(!root) return;
+
+  var old=document.getElementById('lt-neon-scoreboard-style');
+  if(old) old.remove();
+
+  var st=document.createElement('style');
+  st.id='lt-neon-scoreboard-style';
+  st.textContent=`
+  #linetogel-root .league-block{
+    width:min(96%,1460px)!important;
+    margin:0 auto 24px!important;
+    padding:10px!important;
+    border:1px solid rgba(35,201,255,.18)!important;
+    border-radius:18px!important;
+    background:linear-gradient(180deg,rgba(2,12,23,.9),rgba(3,11,20,.82))!important;
+    box-shadow:0 20px 50px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.03)!important;
+  }
+  #linetogel-root .league-inner{border:0!important;background:transparent!important;overflow:visible!important;}
+  #linetogel-root .league-crown{
+    min-height:48px!important;margin:0 4px 10px!important;border:0!important;border-bottom:1px solid rgba(37,202,255,.20)!important;
+    border-radius:10px 10px 0 0!important;background:linear-gradient(90deg,rgba(5,25,43,.94),rgba(9,35,58,.7),rgba(5,25,43,.94))!important;
+  }
+  #linetogel-root .league-crown::before{content:"";position:absolute;left:0;bottom:-1px;width:34%;height:2px;background:linear-gradient(90deg,#19d9ff,transparent);box-shadow:0 0 12px #19d9ff;}
+  #linetogel-root .crown-name{font-family:'Poppins',sans-serif!important;font-size:13px!important;color:#f4fbff!important;letter-spacing:1.4px!important;text-shadow:0 0 13px rgba(25,217,255,.18)!important;}
+  #linetogel-root .match-count{background:#06233b!important;border:1px solid rgba(26,211,255,.36)!important;color:#68e7ff!important;box-shadow:0 0 12px rgba(20,205,255,.12)!important;}
+
+  #linetogel-root .match-card{
+    position:relative!important;
+    margin:14px 5px!important;
+    border:1.5px solid rgba(35,207,255,.72)!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+    background:
+      linear-gradient(90deg,rgba(2,17,32,.96) 0%,rgba(4,23,42,.82) 36%,rgba(4,18,34,.86) 64%,rgba(2,16,30,.96) 100%),
+      url('https://cdn.areabermain.club/assets/cdn/az5/2026/08/10/20260810/a9f1f7ce6f0aad4e3eda5bd9c0b9610e/a1da402c-b9ab-4238-8e0f-50d160a2291b.png') center/cover no-repeat!important;
+    box-shadow:0 0 0 1px rgba(23,138,255,.10),0 0 21px rgba(23,198,255,.18),0 18px 35px rgba(0,0,0,.44),inset 0 1px 0 rgba(255,255,255,.06)!important;
+    isolation:isolate!important;
+    transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease!important;
+  }
+  #linetogel-root .match-card::after{
+    content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 50%,rgba(22,183,255,.14),transparent 22%),
+      radial-gradient(circle at 88% 50%,rgba(22,183,255,.13),transparent 22%),
+      linear-gradient(115deg,transparent 0 44%,rgba(40,211,255,.055) 49%,transparent 54%);
+  }
+  #linetogel-root .match-card:nth-child(4n+2){background:
+    linear-gradient(90deg,rgba(2,18,34,.96),rgba(6,26,47,.83),rgba(4,19,36,.9),rgba(2,16,30,.96)),
+    url('https://cdn.areabermain.club/assets/cdn/az5/2026/08/10/20260810/a9f1f7ce6f0aad4e3eda5bd9c0b9610e/a1da402c-b9ab-4238-8e0f-50d160a2291b.png') 35% center/cover no-repeat!important;}
+  #linetogel-root .match-card:nth-child(4n+3){background:
+    linear-gradient(90deg,rgba(2,17,32,.96),rgba(10,22,49,.86),rgba(5,18,36,.9),rgba(2,16,30,.96)),
+    url('https://cdn.areabermain.club/assets/cdn/az5/2026/08/10/20260810/a9f1f7ce6f0aad4e3eda5bd9c0b9610e/a1da402c-b9ab-4238-8e0f-50d160a2291b.png') 68% center/cover no-repeat!important;}
+  #linetogel-root .match-card:hover{transform:translateY(-2px)!important;border-color:#45e6ff!important;box-shadow:0 0 0 1px rgba(43,206,255,.25),0 0 30px rgba(22,211,255,.28),0 22px 42px rgba(0,0,0,.5)!important;animation:none!important;}
+
+  #linetogel-root .match-card::before{
+    content:"PREVIEW"!important;right:14px!important;top:12px!important;padding:4px 9px!important;border-radius:7px!important;
+    border:1px solid #1cd5ff!important;color:#48e3ff!important;background:linear-gradient(180deg,#073154,#041d34)!important;
+    font-size:8px!important;letter-spacing:.8px!important;box-shadow:0 0 13px rgba(26,213,255,.26),inset 0 1px 0 rgba(255,255,255,.08)!important;
+  }
+  #linetogel-root .match-card.lt-live::before{content:"● LIVE"!important;border-color:#4dff70!important;color:#71ff8c!important;background:linear-gradient(180deg,#0b4021,#052b16)!important;box-shadow:0 0 16px rgba(64,255,102,.28)!important;}
+  #linetogel-root .match-card.lt-finished::before{content:"SELESAI"!important;border-color:#8db5ce!important;color:#c8dce8!important;background:linear-gradient(180deg,#173044,#0a1b29)!important;box-shadow:none!important;}
+
+  #linetogel-root .match-row{
+    min-height:118px!important;padding:17px 24px 12px!important;background:transparent!important;
+    display:grid!important;grid-template-columns:minmax(0,1fr) 168px minmax(0,1fr) 20px!important;align-items:center!important;gap:15px!important;
+  }
+  #linetogel-root .match-card.even .match-row,#linetogel-root .match-card.odd .match-row,#linetogel-root .match-card.open .match-row,#linetogel-root .match-card:not(.open) .match-row:hover{background:transparent!important;}
+
+  #linetogel-root .team-side{width:100%!important;display:flex!important;align-items:center!important;gap:16px!important;min-width:0!important;}
+  #linetogel-root .team-side.left{justify-content:flex-start!important;}
+  #linetogel-root .team-side.right{justify-content:flex-start!important;flex-direction:row-reverse!important;}
+  #linetogel-root .box-image{
+    width:68px!important;height:68px!important;min-width:68px!important;border-radius:50%!important;display:grid!important;place-items:center!important;
+    background:radial-gradient(circle at 50% 42%,rgba(29,154,220,.24),rgba(2,13,25,.82) 68%)!important;
+    border:1px solid rgba(55,207,255,.40)!important;box-shadow:0 0 0 5px rgba(18,122,178,.09),0 0 20px rgba(22,204,255,.16),inset 0 0 18px rgba(0,0,0,.5)!important;
+  }
+  #linetogel-root .box-image img.team-logo{width:52px!important;height:52px!important;object-fit:contain!important;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))!important;}
+  #linetogel-root .match-row:hover .box-image img.team-logo{transform:scale(1.08)!important;filter:drop-shadow(0 0 13px rgba(38,220,255,.38))!important;}
+  #linetogel-root .team-name{font-family:'Poppins',sans-serif!important;font-size:clamp(12px,1.25vw,17px)!important;font-weight:900!important;line-height:1.18!important;color:#f8fcff!important;text-shadow:0 2px 9px rgba(0,0,0,.65)!important;letter-spacing:.1px!important;}
+  #linetogel-root .team-side.right .team-name{text-align:right!important;}
+
+  #linetogel-root .score-center{
+    width:168px!important;min-height:82px!important;justify-self:center!important;padding:10px 10px 8px!important;border-radius:12px!important;
+    background:linear-gradient(180deg,rgba(10,47,82,.96),rgba(5,26,48,.95))!important;border:1px solid rgba(54,183,255,.42)!important;
+    box-shadow:0 8px 20px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.06),0 0 17px rgba(20,172,255,.12)!important;
+    display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;position:relative!important;
+  }
+  #linetogel-root .lt-score-state{font:800 8px 'Poppins',sans-serif;color:#58dcff;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+  #linetogel-root .lt-live .lt-score-state{color:#6dff8b;text-shadow:0 0 9px rgba(83,255,117,.35);}
+  #linetogel-root .lt-finished .lt-score-state{color:#b6c9d7;}
+  #linetogel-root .score-num{font-family:'Poppins',sans-serif!important;font-size:clamp(23px,2.2vw,32px)!important;font-weight:900!important;letter-spacing:5px!important;color:#fff!important;text-shadow:0 0 15px rgba(41,196,255,.22)!important;line-height:1!important;margin:0 0 4px!important;}
+  #linetogel-root .match-dt{font-family:'Poppins',sans-serif!important;font-size:9px!important;line-height:1.35!important;font-weight:800!important;color:#a7c7da!important;opacity:1!important;letter-spacing:.4px!important;}
+  #linetogel-root .chev{width:18px!important;margin:0!important;align-self:center!important;}
+  #linetogel-root .chev svg{color:#2ecfff!important;filter:drop-shadow(0 0 5px rgba(35,206,255,.38));}
+
+  #linetogel-root .lt-analyze-btn{
+    height:42px!important;margin:0 10px 10px!important;border:1.5px solid #1fd2ff!important;border-radius:9px!important;
+    background:linear-gradient(180deg,rgba(8,67,108,.94),rgba(5,42,72,.96))!important;color:#f6fcff!important;
+    font-size:9px!important;font-weight:900!important;letter-spacing:1px!important;box-shadow:0 0 16px rgba(27,202,255,.12),inset 0 1px 0 rgba(255,255,255,.08)!important;
+    transition:.22s ease!important;
+  }
+  #linetogel-root .lt-analyze-btn::before{content:"▥";font-size:15px;color:#34d9ff;text-shadow:0 0 8px rgba(52,217,255,.35);}
+  #linetogel-root .lt-analyze-btn:hover{background:linear-gradient(180deg,#0b6097,#073d67)!important;box-shadow:0 0 24px rgba(30,211,255,.25)!important;transform:translateY(-1px);}
+  #linetogel-root .lt-analyze-btn span{font-size:19px!important;color:#41e2ff!important;}
+
+  #linetogel-root .pred-panel{border-top:0!important;}
+  #linetogel-root .pred-inner{margin:0 10px 10px!important;border:1px solid rgba(39,200,255,.20)!important;border-radius:10px!important;background:rgba(3,18,32,.94)!important;}
+  #linetogel-root .pred-col{background:linear-gradient(180deg,#08233a,#061a2d)!important;border-color:rgba(55,200,255,.17)!important;}
+
+  @media(max-width:760px){
+    #linetogel-root .match-row{grid-template-columns:minmax(0,1fr) 106px minmax(0,1fr) 14px!important;gap:7px!important;padding:17px 10px 10px!important;min-height:94px!important;}
+    #linetogel-root .box-image{width:45px!important;height:45px!important;min-width:45px!important;}
+    #linetogel-root .box-image img.team-logo{width:34px!important;height:34px!important;}
+    #linetogel-root .team-side{gap:7px!important;}.team-name{font-size:9px!important;}
+    #linetogel-root .score-center{width:106px!important;min-height:66px!important;padding:7px 4px!important;}
+    #linetogel-root .score-num{font-size:20px!important;letter-spacing:3px!important;}.match-dt{font-size:7px!important;}.lt-score-state{font-size:6px!important;}
+    #linetogel-root .match-card::before{right:7px!important;top:6px!important;font-size:6px!important;padding:3px 5px!important;}
+    #linetogel-root .lt-analyze-btn{height:36px!important;font-size:8px!important;}
+  }
+  @media(max-width:430px){
+    #linetogel-root .match-card{margin:10px 2px!important;border-radius:12px!important;}
+    #linetogel-root .match-row{grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr) 10px!important;padding:15px 7px 8px!important;}
+    #linetogel-root .box-image{width:38px!important;height:38px!important;min-width:38px!important;}.box-image img.team-logo{width:29px!important;height:29px!important;}
+    #linetogel-root .team-name{font-size:8px!important;}.score-center{width:82px!important;min-height:58px!important;}.score-num{font-size:17px!important;letter-spacing:2px!important;}.match-dt{font-size:6px!important;}
+  }
+  `;
+  root.appendChild(st);
+
+  function statusForCard(card){
+    var m={date:card.getAttribute('data-match-date')||'',time:card.getAttribute('data-match-time')||''};
+    var start=_ltMatchTimestampWIB(m);
+    if(!start) return 'preview';
+    var now=Date.now();
+    if(now>=start && now<start+130*60*1000) return 'live';
+    if(now>=start+130*60*1000) return 'finished';
+    return 'preview';
+  }
+
+  function paintCardStatus(){
+    root.querySelectorAll('.match-card').forEach(function(card){
+      var state=statusForCard(card);
+      card.classList.toggle('lt-live',state==='live');
+      card.classList.toggle('lt-finished',state==='finished');
+      var center=card.querySelector('.score-center');
+      if(center){
+        var label=center.querySelector('.lt-score-state');
+        if(!label){label=document.createElement('div');label.className='lt-score-state';center.insertBefore(label,center.firstChild);}
+        label.textContent=state==='live'?'LIVE':(state==='finished'?'SELESAI':'PREDIKSI');
+      }
+    });
+  }
+
+  paintCardStatus();
+  if(window.__LT_SCOREBOARD_TIMER__) clearInterval(window.__LT_SCOREBOARD_TIMER__);
+  window.__LT_SCOREBOARD_TIMER__=setInterval(paintCardStatus,30000);
+}
+
+/* ═══════════════════════════════════════════════
    INJECT ke root
 ═══════════════════════════════════════════════ */
 function injectHTML(html){
@@ -1056,6 +1447,8 @@ function injectHTML(html){
     s.textContent=old.textContent;
     old.parentNode.replaceChild(s,old);
   });
+  applyEliteSportArena();
+  applyNeonStadiumScoreboard();
 }
 
 /* ═══════════════════════════════════════════════
