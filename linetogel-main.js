@@ -1,5 +1,5 @@
 /* BUILD_VERSION: date-fix-2026-08-24 — header tanggal patok ke HARI INI (WIB) */
-console.log("[bolaauto] elite-sport-clean-no-navbar-no-stats aktif");
+console.log("[bolaauto] elite-sport-live-time-clean-hero aktif");
 (function(){
 
 
@@ -125,6 +125,31 @@ function _bmTanggal(ddmm){
   return ddmm + '/' + _bmTahunWIB(ddmm);
 }
 
+/* LIVE BERDASARKAN JAM KICK-OFF (WIB)
+   Status LIVE aktif dari jam mulai sampai 130 menit setelah kick-off.
+   Dipakai untuk badge LIVE agar tidak muncul sembarang. */
+function _ltMatchTimestampWIB(m){
+  try{
+    if(!m || !m.date || !m.time || m.date==='-' || m.time==='-') return 0;
+    var dp=String(m.date).replace(/-/g,'/').split('/');
+    var tp=String(m.time).replace('.',':').split(':');
+    if(dp.length<2 || tp.length<2) return 0;
+    var d=parseInt(dp[0],10), mo=parseInt(dp[1],10)-1;
+    var y=dp.length>=3 && parseInt(dp[2],10) ? parseInt(dp[2],10) : _bmTahunWIB(m.date);
+    if(y<100) y+=2000;
+    var h=parseInt(tp[0],10), mi=parseInt(tp[1],10);
+    if([d,mo,y,h,mi].some(function(v){return isNaN(v);} )) return 0;
+    /* Jam sumber = WIB (UTC+7), konversi ke timestamp UTC */
+    return Date.UTC(y,mo,d,h-7,mi,0,0);
+  }catch(e){ return 0; }
+}
+function isMatchLiveBySchedule(m){
+  var start=_ltMatchTimestampWIB(m);
+  if(!start) return false;
+  var now=Date.now();
+  return now>=start && now<(start + 130*60*1000);
+}
+
 /* Ambil pertandingan teratas dari hasil parse → [{liga, m}] */
 function pickBigMatches(leagues){
   var out=[], sudah={}, i, j, lg, key;
@@ -176,11 +201,13 @@ function buildBigMatchHTML(leagues){
 
     /* BM_BIG kartu teratas = BIG MATCH (pakai api), sisanya MATCH DAY */
     var isBig= (idx < BM_BIG);
+    var isLive = isMatchLiveBySchedule(m);
     var lbl  = isBig ? 'BIG MATCH' : 'MATCH DAY';
     var fire = isBig ? '<span class="bm-fire">&#128293;</span>' : '';
+    var liveBadge = isLive ? '<span class="bm-live-now">&#9679; LIVE</span>' : '';
 
-    cards+='<article class="bm-card"><span class="bm-shine"></span>'
-      +  '<div class="bm-badgewrap"><span class="bm-badge">'+fire+lbl+'</span></div>'
+    cards+='<article class="bm-card'+(isLive?' lt-live':'')+'" data-match-date="'+m.date+'" data-match-time="'+m.time+'"><span class="bm-shine"></span>'
+      +  '<div class="bm-badgewrap"><span class="bm-badge">'+fire+lbl+'</span>'+liveBadge+'</div>'
       +  '<div class="bm-league">'+(it.liga||'')+'</div>'
       +  '<div class="bm-teams">'
       +    '<div class="bm-team"><span class="bm-logo"><img src="'+lh+'" alt="'+m.team1+'" loading="lazy"/></span><b>'+m.team1+'</b></div>'
@@ -791,7 +818,8 @@ function buildOutputHTML(leagues){
       var ouAccent=p.ouClass==='green'?'accent-green':'accent-red';
       var ox2Accent=p.ox2Class==='green'?'accent-green':'accent-gold';
       var teamKey=(m.team1+' '+m.team2).toLowerCase();
-      blocks+='<div class="match-card '+cls+'" data-teams="'+teamKey+'" onclick="ibcToggleCard(this)">\n';
+      var liveCls=isMatchLiveBySchedule(m)?' lt-live':'';
+      blocks+='<div class="match-card '+cls+liveCls+'" data-teams="'+teamKey+'" data-match-date="'+m.date+'" data-match-time="'+m.time+'" onclick="ibcToggleCard(this)">\n';
       blocks+='<div class="match-row">\n';
       blocks+='  <div class="team-side left">\n    <div class="box-image">\n      <img class="team-logo" src="'+l1+'" alt="'+m.team1+'"/>\n      <img class="character" src="'+l1+'" alt=""/>\n    </div>\n    <span class="team-name">'+m.team1+'</span>\n  </div>\n';
       blocks+='  <div class="score-center"><div class="score-num">'+m.score1+' : '+m.score2+'</div><div class="match-dt">'+m.date+'<br/>'+m.time+' WIB</div></div>\n';
@@ -950,7 +978,7 @@ function buildOutputHTML(leagues){
 +'</header>\n'
 +'\n'
 +'<div class="date-display">\n'
-+'  <span class="date-text">&#128197; '+autoDate+'</span>\n'
++'  <span class="date-text">'+autoDate+'</span>\n'
 +'</div>\n'
 +'\n'
 +'<div class="marquee-wrap"><div class="marquee-inner">'+MARQUEE_TEXT+'&nbsp;&nbsp;&nbsp;&nbsp;'+MARQUEE_TEXT+'</div></div>\n'
@@ -1105,10 +1133,11 @@ function applyEliteSportArena(){
   #linetogel-root .lt-hero-right{position:absolute;right:18%;top:70px;z-index:4;width:180px;border-left:3px solid #70ff74;padding-left:15px;font-size:12px;line-height:1.7;font-weight:900;letter-spacing:2px;color:#eefaff;text-transform:uppercase;text-shadow:0 1px 4px #000;}
   #linetogel-root .lt-hero-right em{display:block;color:#25dbff;font-size:16px;font-style:italic;margin-bottom:7px;letter-spacing:1px;}
 
-  #linetogel-root .date-display{width:min(96%,1460px)!important;margin:0 auto 10px!important;border-radius:0 0 12px 12px!important;border:1px solid rgba(63,211,255,.21)!important;padding:9px 18px!important;background:linear-gradient(90deg,#061425,#07192c,#061425)!important;box-shadow:none!important;display:flex!important;}
-  #linetogel-root .date-display::before{content:"● LIVE";padding:5px 9px;margin-right:10px;border-radius:7px;background:rgba(74,255,121,.11);border:1px solid rgba(74,255,121,.28);color:#65ff87;font-size:9px;font-weight:900;letter-spacing:1px;}
-  #linetogel-root .date-display::after{content:"#FootballNeverStops";color:#18d8ff;font-size:9px;font-weight:900;letter-spacing:.6px;}
-  #linetogel-root .date-text{font-family:'Poppins',sans-serif!important;font-size:11px!important;letter-spacing:.7px!important;color:#eafbff!important;text-shadow:none!important;}
+  #linetogel-root .date-display{width:min(96%,1460px)!important;margin:0 auto 10px!important;border-radius:0 0 12px 12px!important;border:1px solid rgba(63,211,255,.21)!important;padding:9px 18px!important;background:linear-gradient(90deg,#061425,#07192c,#061425)!important;box-shadow:none!important;display:flex!important;align-items:center!important;gap:10px!important;}
+  #linetogel-root .date-display::before,#linetogel-root .date-display::after{display:none!important;}
+  #linetogel-root .lt-live-strip{padding:5px 9px;border-radius:7px;border:1px solid rgba(63,211,255,.24);background:rgba(24,216,255,.08);color:#5edfff;font-size:9px;font-weight:900;letter-spacing:1px;white-space:nowrap;}
+  #linetogel-root .lt-live-strip.is-live{background:rgba(74,255,121,.11);border-color:rgba(74,255,121,.34);color:#65ff87;box-shadow:0 0 13px rgba(74,255,121,.11);}
+  #linetogel-root .date-text{font-family:'Poppins',sans-serif!important;font-size:11px!important;letter-spacing:.7px!important;color:#eafbff!important;text-shadow:none!important;flex:1!important;}
 
   #linetogel-root .stats-bar{width:min(96%,1460px)!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin-bottom:12px!important;}
   #linetogel-root .stat-item{height:75px!important;border:1px solid rgba(64,204,255,.28)!important;border-radius:13px!important;background:linear-gradient(135deg,rgba(8,31,54,.94),rgba(4,17,31,.97))!important;box-shadow:0 10px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05)!important;padding:12px 15px!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;text-align:left!important;position:relative!important;overflow:hidden!important;}
@@ -1154,6 +1183,8 @@ function applyEliteSportArena(){
   #linetogel-root .match-card{position:relative!important;margin:8px!important;border:1px solid rgba(71,193,236,.17)!important;border-radius:9px!important;overflow:hidden!important;background:linear-gradient(135deg,rgba(8,27,48,.97),rgba(5,17,30,.97))!important;box-shadow:0 9px 22px rgba(0,0,0,.22)!important;}
   #linetogel-root .match-card::before{content:"PREVIEW";position:absolute;right:8px;top:7px;z-index:5;border:1px solid #1ebdff;color:#29ccff;border-radius:4px;padding:2px 6px;font-size:7px;font-weight:900;letter-spacing:.4px;background:#062039;}
   #linetogel-root .match-card.lt-live::before{content:"● LIVE";border-color:#38ff63;color:#45ff69;background:#073119;box-shadow:0 0 12px rgba(65,255,100,.16);}
+  #linetogel-root .bm-live-now{display:inline-flex;align-items:center;justify-content:center;padding:4px 9px;border-radius:999px;background:rgba(52,255,95,.13);border:1px solid rgba(61,255,98,.42);color:#59ff78;font-size:8px;font-weight:900;letter-spacing:.8px;box-shadow:0 0 14px rgba(65,255,100,.14);}
+  #linetogel-root .bm-card.lt-live{border-color:rgba(67,255,106,.58)!important;box-shadow:0 18px 34px rgba(0,0,0,.48),0 0 25px rgba(68,255,104,.14)!important;}
   #linetogel-root .match-row{padding:19px 13px 10px!important;background:transparent!important;}.match-card.even .match-row,.match-card.odd .match-row{background:transparent!important;}.match-card.open .match-row{background:rgba(10,34,59,.78)!important;}.match-card:not(.open) .match-row:hover{background:rgba(13,43,73,.86)!important;}
   #linetogel-root .team-side{gap:9px!important;}.box-image{width:46px!important;height:46px!important;display:grid!important;place-items:center!important;border-radius:50%!important;background:radial-gradient(circle,rgba(34,129,181,.18),rgba(3,13,23,.2))!important;border:1px solid rgba(71,206,255,.14)!important;}.box-image img.team-logo{width:35px!important;height:35px!important;}.match-row:hover .box-image img.team-logo{transform:scale(1.12)!important;filter:drop-shadow(0 0 10px rgba(25,216,255,.35))!important;}
   #linetogel-root .team-name{font-family:'Poppins',sans-serif!important;font-size:11px!important;color:#f5fbff!important;}.score-center{width:108px!important;padding:5px 7px!important;border-radius:7px!important;background:rgba(18,48,76,.55)!important;border:1px solid rgba(70,197,238,.11)!important;}.score-num{font-family:'Poppins',sans-serif!important;font-size:20px!important;color:white!important;letter-spacing:3px!important;text-shadow:none!important;}.match-dt{font-family:'Poppins',sans-serif!important;font-size:8px!important;color:#9fbed2!important;opacity:1!important;}
@@ -1172,13 +1203,7 @@ function applyEliteSportArena(){
   `;
   root.appendChild(css);
 
-  var hero=root.querySelector('.site-logo');
-  if(hero){
-    var copy=document.createElement('div');copy.id='lt-hero-copy';copy.className='lt-hero-copy';
-    copy.innerHTML='<div class="lt-hero-kicker">WELCOME TO</div><div class="lt-hero-title">PREDIKSI BOLA <b>SPORT ARENA</b></div><div class="lt-hero-tag">LEBIH DARI SEKEDAR PREDIKSI — <strong>PASSION</strong></div>';
-    hero.appendChild(copy);
-    var right=document.createElement('div');right.className='lt-hero-right';right.innerHTML='<em>FOOTBALL<br>LIVES HERE</em>PREDIKSI<br>HARI INI<br>UNTUK<br>KEMENANGAN<br>BESOK';hero.appendChild(right);
-  }
+  /* Hero sengaja tanpa copy tambahan: hanya visual/logo/karakter. */
 
   /* Navbar atas dan panel statistik sengaja dihilangkan sesuai desain terbaru. */
   var stats=root.querySelector('.stats-bar');
@@ -1196,11 +1221,47 @@ function applyEliteSportArena(){
     sel.addEventListener('change',function(){chips.querySelectorAll('.lt-league-chip').forEach(function(x){x.classList.toggle('active',x.dataset.value===sel.value)});});
   }
 
+  var dateBar=root.querySelector('.date-display');
+  var liveStrip=null;
+  if(dateBar){
+    liveStrip=document.createElement('span');
+    liveStrip.className='lt-live-strip';
+    dateBar.insertBefore(liveStrip,dateBar.firstChild);
+  }
+
+  function _ltCardIsLive(card){
+    var obj={date:card.getAttribute('data-match-date')||'',time:card.getAttribute('data-match-time')||''};
+    return isMatchLiveBySchedule(obj);
+  }
+  function updateLiveStates(){
+    var liveCount=0;
+    root.querySelectorAll('.match-card').forEach(function(card){
+      var live=_ltCardIsLive(card);
+      card.classList.toggle('lt-live',live);
+      if(live) liveCount++;
+    });
+    root.querySelectorAll('.bm-card[data-match-date]').forEach(function(card){
+      var live=_ltCardIsLive(card);
+      card.classList.toggle('lt-live',live);
+      var badge=card.querySelector('.bm-live-now');
+      if(live && !badge){
+        badge=document.createElement('span');badge.className='bm-live-now';badge.innerHTML='&#9679; LIVE';
+        var wrap=card.querySelector('.bm-badgewrap');if(wrap) wrap.appendChild(badge);
+      }else if(!live && badge){ badge.remove(); }
+    });
+    if(liveStrip){
+      liveStrip.classList.toggle('is-live',liveCount>0);
+      liveStrip.textContent=liveCount>0 ? ('● '+liveCount+' LIVE SEKARANG') : 'JADWAL PERTANDINGAN';
+    }
+  }
+
   var cards=root.querySelectorAll('.match-card');
-  cards.forEach(function(card,idx){
-    if(idx===0) card.classList.add('lt-live');
+  cards.forEach(function(card){
     if(!card.querySelector('.lt-analyze-btn')){var btn=document.createElement('div');btn.className='lt-analyze-btn';btn.innerHTML='LIHAT ANALISA <span>›</span>';btn.onclick=function(e){e.stopPropagation();if(typeof ibcToggleCard==='function') ibcToggleCard(card);};card.appendChild(btn);}
   });
+  updateLiveStates();
+  if(window.__LT_LIVE_TIMER__) clearInterval(window.__LT_LIVE_TIMER__);
+  window.__LT_LIVE_TIMER__=setInterval(updateLiveStates,30000);
 
   var bottom=document.createElement('div');bottom.id='lt-sport-bottom';bottom.className='lt-sport-bottom';
   bottom.innerHTML='<div class="lt-bottom-card"><div class="lt-bottom-icon">▥</div><div><b>STATISTIK & KLASMEN</b><span>Lihat performa tim dan data pertandingan</span></div></div>'+
