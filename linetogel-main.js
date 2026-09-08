@@ -1,5 +1,5 @@
 /* BUILD_VERSION: date-fix-2026-08-24 — header tanggal patok ke HARI INI (WIB) */
-console.log("[bolaauto] date-fix-2026-08-24 aktif");
+console.log("[bolaauto] elite-sport-clean-no-navbar-no-stats aktif");
 (function(){
 
 
@@ -953,12 +953,6 @@ function buildOutputHTML(leagues){
 +'  <span class="date-text">&#128197; '+autoDate+'</span>\n'
 +'</div>\n'
 +'\n'
-+'<div class="stats-bar">\n'
-+'  <div class="stat-item"><span class="stat-num">'+totalLeagues+'</span><span class="stat-lbl">Liga</span></div>\n'
-+'  <div class="stat-item"><span class="stat-num">'+totalMatches+'</span><span class="stat-lbl">Pertandingan</span></div>\n'
-+'  <div class="stat-item"><span class="stat-num">100%</span><span class="stat-lbl">Terupdate</span></div>\n'
-+'</div>\n'
-+'\n'
 +'<div class="marquee-wrap"><div class="marquee-inner">'+MARQUEE_TEXT+'&nbsp;&nbsp;&nbsp;&nbsp;'+MARQUEE_TEXT+'</div></div>\n'
 +buildBigMatchHTML(leagues)
 +'\n'
@@ -1046,7 +1040,7 @@ function buildOutputHTML(leagues){
 }
 
 /* ═══════════════════════════════════════════════
-   ELITE SPORT ARENA DESIGN — VISUAL / UI ADDON
+   ELITE SPORT ARENA DESIGN — CLEAN SPORT UI (NAVBAR & STATS REMOVED)
    Tidak mengubah parser, sumber data, prediksi, filter inti, atau auto-refresh.
 ═══════════════════════════════════════════════ */
 function applyEliteSportArena(){
@@ -1178,17 +1172,6 @@ function applyEliteSportArena(){
   `;
   root.appendChild(css);
 
-  var top=document.createElement('div');
-  top.id='lt-sport-topbar';
-  top.className='lt-sport-topbar';
-  top.innerHTML='<div class="lt-brand-mini"><span class="lt-ball">⚽</span><span>LINE <b>TOGEL</b></span></div>'+
-    '<nav class="lt-main-nav"><button class="active">Beranda</button><button>Prediksi</button><button>Jadwal</button><button>Klasemen</button><button>Berita</button><button>Data</button><button>Panduan</button></nav>'+
-    '<div class="lt-nav-search" title="Klik untuk menuju pencarian">⌕ <span>Cari pertandingan, liga, atau tim...</span></div>'+
-    '<button class="lt-login">Masuk</button><button class="lt-register">Daftar</button>';
-  root.insertBefore(top,root.firstChild);
-  var navSearch=top.querySelector('.lt-nav-search');
-  if(navSearch) navSearch.onclick=function(){var q=document.getElementById('teamSearch');if(q){q.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(function(){q.focus();},350);}};
-
   var hero=root.querySelector('.site-logo');
   if(hero){
     var copy=document.createElement('div');copy.id='lt-hero-copy';copy.className='lt-hero-copy';
@@ -1197,11 +1180,9 @@ function applyEliteSportArena(){
     var right=document.createElement('div');right.className='lt-hero-right';right.innerHTML='<em>FOOTBALL<br>LIVES HERE</em>PREDIKSI<br>HARI INI<br>UNTUK<br>KEMENANGAN<br>BESOK';hero.appendChild(right);
   }
 
+  /* Navbar atas dan panel statistik sengaja dihilangkan sesuai desain terbaru. */
   var stats=root.querySelector('.stats-bar');
-  if(stats){
-    var third=stats.children[2];if(third){var live=document.createElement('span');live.className='stat-live';live.textContent='LIVE';third.appendChild(live);}
-    if(stats.children.length<4){var s4=document.createElement('div');s4.className='stat-item';s4.innerHTML='<span class="stat-num">87%</span><span class="stat-lbl">AKURASI PREDIKSI</span>';stats.appendChild(s4);}
-  }
+  if(stats) stats.remove();
 
   var filter=root.querySelector('.filter-wrap');
   var sel=document.getElementById('leagueFilter');
